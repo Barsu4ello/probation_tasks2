@@ -1,0 +1,163 @@
+1) Установить ограничения NOT NULL на все столбцы
+CREATE TABLE users
+(
+    id         bigserial PRIMARY KEY       NOT NULL,
+    first_name varchar(128) DEFAULT 'Vlad' NOT NULL,
+    last_name  varchar(128)                NOT NULL,
+    email      varchar(128) UNIQUE,
+    age        smallint CHECK (age > 0 and age < 100)
+)
+
+DROP TABLE users
+
+2) Сработает ли код, можно ли что-то подправить
+INSERT INTO users (id, last_name, email, age)
+VALUES
+(1,'Ivanov','ivanov@mail.ru',11),
+(2,'Borisov','borisov@mail.ru',11),
+(3,'Petrov','petrov@mail.ru',11)
+
+Для задач
+CREATE TABLE cars
+(
+    id       bigserial PRIMARY KEY,
+    car_name varchar(128)       NOT NULL,
+    price    int                NOT NULL,
+    discount smallint DEFAULT 0 NOT NULL,
+    new      boolean  DEFAULT true NOT NULL
+)
+
+DROP TABLE users;
+
+INSERT INTO cars (car_name, price, discount, new)
+VALUES ('Mercedes', 5000, 5, false),
+       ('Mercedes', 10000, 10, true),
+       ('BMW', 12000, 7, false),
+       ('BMW', 15000, 10, true),
+       ('Lexus', 20000, 5, false),
+       ('Lexus', 25000, 5, true);
+
+DELETE
+FROM cars;
+
+SELECT * FROM cars;
+
+3) Выбрать все новые машина ценой более или равной 15 000 (Вывести только марку и цену)
+-- 4) с учетом скидки
+SELECT car_name,price
+FROM cars
+WHERE price >= 15000 AND new = true;
+
+SELECT car_name,price
+FROM cars
+WHERE price*(100-discount)/100 >= 15000 and new = true;
+
+SELECT car_name,price
+FROM cars
+WHERE price*(1.0-CAST(discount AS numeric)/100) >= 15000 and new = true;
+
+--5) Вывести количество авто каждой марки
+SELECT car_name, COUNT(*)
+FROM  cars
+GROUP BY car_name
+
+--6) Вывести корректное название столбца с количеством автомобилей
+SELECT car_name, COUNT(*) AS count_auto
+FROM  cars
+GROUP BY car_na
+
+--7) Вывести название марки и сумму автомобилей этой марки, которая
+-- должна быть более 20 000 и отсортировать по убыванию
+SELECT car_name, SUM(price) AS amount
+FROM cars
+GROUP BY car_name
+HAVING SUM(price) >20000
+ORDER BY amount DESC
+
+--8) Вывести по одному авто каждой марки с максимальной стоимостью
+-- отсортирвоать по возрастнию
+SELECT car_name, MAX(price) as max
+FROM cars
+GROUP BY car_name
+ORDER BY max ASC
+
+--Для задач
+CREATE TABLE employee
+(
+    id       bigserial PRIMARY KEY NOT NULL,
+    name     varchar(128)          NOT NULL,
+    position varchar(128)          NOT NULL,
+    chief_id bigint,
+    FOREIGN KEY (chief_id) REFERENCES employee (id)
+);
+
+DROP TABLE employee;
+
+--9) Вывести информацию о работники и его начальнике
+--Если начальника нет то работника не выводить
+SELECT employee.name,employee.position,employee2.name AS chief_name
+FROM employee
+JOIN employee as employee2 ON employee.chief_id = employee2.id
+
+--Для задач
+CREATE TABLE customer
+(
+    id       bigserial PRIMARY KEY NOT NULL,
+    name     varchar(128)          NOT NULL,
+    employee_id bigint,
+    FOREIGN KEY (employee_id) REFERENCES employee (id)
+);
+
+DROP TABLE customer;
+
+INSERT INTO customer (name, employee_id)
+VALUES
+    ('Vlad', 4),
+    ('Ivan', 5),
+    ('Petr', 4),
+    ('Natalia', 4),
+    ('Egor', 5);
+
+DELETE
+FROM customer;
+
+--10) Вывести всех работников и соответствующих  клиентов ,
+-- вне зависимости от того, есть ли у них клиенты или нет
+-- (поля с именами и позицией)
+SELECT employee.name, position, customer.name
+FROM employee
+LEFT OUTER JOIN customer ON employee.id = customer.employee_id;
+
+--11) Вывести менеджера (имя и позицию) с id=5
+-- и имена его клиентов
+SELECT employee.name AS customer_name, position, customer.name AS customer_name
+FROM employee
+JOIN customer on employee.id = customer.employee_id
+WHERE employee_id = 5;
+
+--12) Вывести имена всех работников и клиентов в одном столбце
+--(поля имя)
+SELECT name
+FROM employee
+UNION ALL SELECT name FROM customer;
+
+--13) Чтобы различить кто работник кто клиент добавьте информацию
+-- по позиции для работников
+SELECT (name || ' ' ||employee.position) AS name
+FROM employee
+UNION ALL SELECT name FROM customer
+
+--14) Вывести имена работников из первой таблица которых нету
+-- в именах клиентов
+SELECT name
+FROM employee
+EXCEPT SELECT name FROM customer
+--15) Вывести имена работников из первой таблица которые есть
+-- в именах клиентов
+SELECT name
+FROM employee
+INTERSECT SELECT name FROM customer
+--16) Вывести имена всех клиентов кроме Наталии
+SELECT *
+FROM customer
+WHERE name NOT LIKE 'Natalia'
